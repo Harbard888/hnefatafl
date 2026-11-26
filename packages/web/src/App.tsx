@@ -12,6 +12,7 @@ import {
   type Side,
 } from './api';
 import { describeMove, highlightsFor, movesOf } from './moves';
+import { MusicPlayer } from './MusicPlayer';
 import { DIFFICULTY_KEYS, detectLang, translator, type Lang, type MessageKey } from './i18n';
 import OnlineGame from './OnlineGame';
 import { loadSession } from './onlineHelpers';
@@ -162,6 +163,8 @@ export default function App() {
           </select>
         </label>
       </header>
+
+      <MusicPlayer t={t} />
 
       <section className="controls">
         <label>
