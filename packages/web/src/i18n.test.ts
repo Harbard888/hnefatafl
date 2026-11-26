@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { DIFFICULTY_KEYS, detectLang, translator } from './i18n';
+import { DIFFICULTY_KEYS, VARIANT_KEYS, detectLang, translator } from './i18n';
 
 describe('translator', () => {
   it('interpolates named variables', () => {
@@ -45,5 +45,16 @@ describe('detectLang', () => {
   it('falls back to English for other languages', () => {
     vi.stubGlobal('navigator', { language: 'fr-FR' });
     expect(detectLang()).toBe('en');
+  });
+});
+
+describe('variants', () => {
+  it('translates every variant in both languages', () => {
+    for (const lang of ['de', 'en'] as const) {
+      const t = translator(lang);
+      expect(t('variant')).not.toBe('');
+      for (const key of Object.values(VARIANT_KEYS)) expect(t(key)).not.toBe('');
+    }
+    expect(translator('de')('variant')).not.toBe(translator('en')('variant'));
   });
 });

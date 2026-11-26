@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
 import {
   ApiError,
   createOnlineGame,
@@ -9,13 +9,13 @@ import {
   type OnlineView,
   type Pos,
   type Side,
+  type Variant,
+  VARIANTS,
 } from './api';
-import { describeMove, highlightsFor } from './moves';
-import type { MessageKey, Translate } from './i18n';
+import { describeMove, highlightsFor, specialSquares } from './moves';
+import { VARIANT_KEYS, type MessageKey, type Translate } from './i18n';
 import { inviteLink, loadSession, parseJoinCode, saveSession, type Session } from './onlineHelpers';
 
-const THRONE = { row: 5, col: 5 };
-const CORNERS = new Set(['0,0', '0,10', '10,0', '10,10']);
 const SYMBOLS: Record<string, string> = { attacker: '⚫', defender: '⚪', king: '👑' };
 const POLL_MS = 1500;
 
@@ -32,6 +32,7 @@ export default function OnlineGame({ t }: { t: Translate }) {
   const [session, setSession] = useState<Session | null>(() => loadSession(window.localStorage));
   const [view, setView] = useState<OnlineView | null>(null);
   const [side, setSide] = useState<Side | 'random'>('random');
+  const [variant, setVariant] = useState<Variant>('copenhagen');
   const [codeInput, setCodeInput] = useState(() => initialJoinParam() ?? '');
   const [selected, setSelected] = useState<Pos | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -85,7 +86,7 @@ export default function OnlineGame({ t }: { t: Translate }) {
     }
   }
 
-  const create = () => run(async () => enter(await createOnlineGame(side)));
+  const create = () => run(async () => enter(await createOnlineGame(side, variant)));
   const join = () =>
     run(async () => {
       const code = parseJoinCode(codeInput);
@@ -161,6 +162,14 @@ export default function OnlineGame({ t }: { t: Translate }) {
               <option value="defender">{t('defender')}</option>
             </select>
           </label>
+          <label>
+            {t('variant')}{' '}
+            <select value={variant} onChange={(e) => setVariant(e.target.value as Variant)}>
+              {VARIANTS.map((v) => (
+                <option key={v} value={v}>{t(VARIANT_KEYS[v])}</option>
+              ))}
+            </select>
+          </label>
           <button onClick={create} disabled={busy}>{t('onlineCreate')}</button>
         </div>
         <div className="controls">
@@ -189,6 +198,8 @@ export default function OnlineGame({ t }: { t: Translate }) {
     status = myTurn ? t('onlineYourTurn') : t('onlineTheirTurn');
   }
 
+  const special = specialSquares(view.board.length, view.variant);
+
   return (
     <>
       {error && <p className="error" role="alert">{error}</p>}
@@ -209,13 +220,18 @@ export default function OnlineGame({ t }: { t: Translate }) {
           )}
         </>
       )}
-      <div className="board" role="grid" aria-label={t('board')}>
+      <div
+        className="board"
+        role="grid"
+        aria-label={t('board')}
+        style={{ '--board-size': view.board.length } as CSSProperties}
+      >
         {view.board.map((rowCells, row) =>
           rowCells.map((square, col) => {
             const pos = { row, col };
             const classes = ['cell'];
-            if (CORNERS.has(`${row},${col}`)) classes.push('corner');
-            if (same(THRONE, pos)) classes.push('throne');
+            if (special.corners.has(`${row},${col}`)) classes.push('corner');
+            if (same(special.throne, pos)) classes.push('throne');
             if (selected !== null && same(selected, pos)) classes.push('selected');
             if (targets.has(`${row},${col}`)) classes.push('target');
             if (highlights.last.has(`${row},${col}`)) classes.push('last');

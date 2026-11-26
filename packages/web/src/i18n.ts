@@ -7,6 +7,10 @@ const messages = {
     mode: 'Modus',
     modeTwoPlayer: 'Zwei Spieler',
     modeVsComputer: 'Gegen den Computer (Verteidiger)',
+    variant: 'Variante',
+    variantCopenhagen: 'Kopenhagen (11×11)',
+    variantBrandubh: 'Brandubh (7×7)',
+    variantTablut: 'Tablut (9×9)',
     difficulty: 'Schwierigkeit',
     difficultyEasy: 'Leicht',
     difficultyMedium: 'Mittel',
@@ -71,6 +75,10 @@ const messages = {
     mode: 'Mode',
     modeTwoPlayer: 'Two players',
     modeVsComputer: 'Against the computer (defenders)',
+    variant: 'Variant',
+    variantCopenhagen: 'Copenhagen (11×11)',
+    variantBrandubh: 'Brandubh (7×7)',
+    variantTablut: 'Tablut (9×9)',
     difficulty: 'Difficulty',
     difficultyEasy: 'Easy',
     difficultyMedium: 'Medium',
@@ -132,6 +140,11 @@ const messages = {
 } as const satisfies Record<Lang, Record<string, string>>;
 
 export type MessageKey = keyof typeof messages.de;
+export const VARIANT_KEYS = {
+  copenhagen: 'variantCopenhagen',
+  brandubh: 'variantBrandubh',
+  tablut: 'variantTablut',
+} as const satisfies Record<string, MessageKey>;
 export const DIFFICULTY_KEYS = {
   easy: 'difficultyEasy',
   medium: 'difficultyMedium',

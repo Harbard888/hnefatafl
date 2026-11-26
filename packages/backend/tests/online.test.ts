@@ -85,3 +85,17 @@ describe('online games', () => {
     expect((await poll(app, code, a)).body.opponentConnected).toBe(true);
   });
 });
+
+describe('online variants', () => {
+  it('creates games for the requested variant and defaults to Copenhagen', async () => {
+    const app = createApp(undefined, new OnlineStore());
+    const tablut = await request(app).post('/api/online/games').send({ side: 'attacker', variant: 'tablut' });
+    expect(tablut.status).toBe(201);
+    expect(tablut.body.view.variant).toBe('tablut');
+    expect(tablut.body.view.board).toHaveLength(9);
+
+    const plain = await request(app).post('/api/online/games').send({});
+    expect(plain.body.view.variant).toBe('copenhagen');
+    expect((await request(app).post('/api/online/games').send({ variant: 'x' })).status).toBe(400);
+  });
+});

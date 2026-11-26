@@ -26,9 +26,13 @@ export interface LegalMove {
 export type Difficulty = 'easy' | 'medium' | 'hard';
 export const DIFFICULTIES: readonly Difficulty[] = ['easy', 'medium', 'hard'];
 
+export type Variant = 'copenhagen' | 'brandubh' | 'tablut';
+export const VARIANTS: readonly Variant[] = ['copenhagen', 'brandubh', 'tablut'];
+
 export interface GameView {
   id: string;
   mode: GameMode;
+  variant?: Variant;
   computerSide: Side;
   difficulty: Difficulty | null;
   board: Board;
@@ -43,6 +47,7 @@ export interface CreateOptions {
   mode: GameMode;
   computerSide?: Side;
   difficulty?: Difficulty;
+  variant?: Variant;
 }
 
 export class ApiError extends Error {
@@ -70,6 +75,7 @@ async function request<T>(path: string, init?: RequestInit, token?: string): Pro
 export interface OnlineView {
   code: string;
   you: Side;
+  variant?: Variant;
   board: GameView['board'];
   turn: Side;
   status: GameView['status'];
@@ -85,8 +91,8 @@ export interface OnlineSeat {
   view: OnlineView;
 }
 
-export function createOnlineGame(side: Side | 'random'): Promise<OnlineSeat> {
-  return request('/api/online/games', { method: 'POST', body: JSON.stringify({ side }) });
+export function createOnlineGame(side: Side | 'random', variant: Variant = 'copenhagen'): Promise<OnlineSeat> {
+  return request('/api/online/games', { method: 'POST', body: JSON.stringify({ side, variant }) });
 }
 
 export function joinOnlineGame(code: string): Promise<OnlineSeat> {

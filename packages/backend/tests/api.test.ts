@@ -125,3 +125,36 @@ describe('validation', () => {
     expect((await request(app).post('/api/games/missing/moves').send({ from, to })).status).toBe(404);
   });
 });
+
+describe('variants', () => {
+  it('defaults to Copenhagen and rejects unknown variants', async () => {
+    const app = createApp();
+    const { id } = await createGame(app);
+    const res = await request(app).get(`/api/games/${id}`);
+    expect(res.body.variant).toBe('copenhagen');
+    expect(res.body.board).toHaveLength(11);
+    expect((await request(app).post('/api/games').send({ variant: 'chess' })).status).toBe(400);
+  });
+
+  it.each([['brandubh', 7], ['tablut', 9]])('creates %s games with a %i-square board', async (variant, size) => {
+    const app = createApp();
+    const created = await request(app).post('/api/games').send({ variant, mode: 'two-player' });
+    expect(created.status).toBe(201);
+    expect(created.body.variant).toBe(variant);
+    expect(created.body.board).toHaveLength(size);
+
+    const outside = await request(app).post(`/api/games/${created.body.id}/moves`)
+      .send({ from: { row: 0, col: size }, to: { row: 0, col: 0 } });
+    expect(outside.status).toBe(400);
+  });
+
+  it('lets the computer answer on a smaller board', async () => {
+    const app = createApp();
+    const created = await request(app).post('/api/games')
+      .send({ variant: 'brandubh', mode: 'vs-computer', difficulty: 'easy' });
+    const res = await request(app).post(`/api/games/${created.body.id}/moves`)
+      .send({ from: { row: 0, col: 3 }, to: { row: 0, col: 2 } });
+    expect(res.status).toBe(200);
+    expect(res.body.computerMove).not.toBeNull();
+  });
+});

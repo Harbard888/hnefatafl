@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import { HnefataflGame, type Board, type GameStatus, type Pos, type Side } from '@hnefatafl/core-engine';
+import { getVariant, HnefataflGame, type Board, type GameStatus, type Pos, type Side, type VariantId } from '@hnefatafl/core-engine';
 import type { LegalMove, PlayedMove } from './games.js';
 
 export type SideChoice = Side | 'random';
@@ -22,6 +22,7 @@ export class OnlineError extends Error {
 export interface OnlineView {
   readonly code: string;
   readonly you: Side;
+  readonly variant: VariantId;
   readonly board: Board;
   readonly turn: Side;
   readonly status: GameStatus;
@@ -61,11 +62,11 @@ export class OnlineStore {
 
   constructor(private readonly now: () => number = Date.now) {}
 
-  create(choice: SideChoice = 'random'): Seat {
+  create(choice: SideChoice = 'random', variant: VariantId = 'copenhagen'): Seat {
     this.sweep();
     const side: Side = choice === 'random' ? (randomBytes(1)[0] % 2 === 0 ? 'attacker' : 'defender') : choice;
     const code = this.newCode();
-    const stored: OnlineGame = { code, game: new HnefataflGame(), players: {}, moves: [], touched: this.now() };
+    const stored: OnlineGame = { code, game: new HnefataflGame({ variant: getVariant(variant) }), players: {}, moves: [], touched: this.now() };
     this.games.set(code, stored);
     return this.seat(stored, side);
   }
@@ -131,6 +132,7 @@ export class OnlineStore {
     return {
       code: stored.code,
       you,
+      variant: game.variant.id,
       board: game.getBoard(),
       turn: game.turn,
       status: game.status,
