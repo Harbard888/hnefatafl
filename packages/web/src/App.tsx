@@ -13,6 +13,8 @@ import {
 } from './api';
 import { describeMove, highlightsFor, movesOf } from './moves';
 import { DIFFICULTY_KEYS, detectLang, translator, type Lang, type MessageKey } from './i18n';
+import OnlineGame from './OnlineGame';
+import { loadSession } from './onlineHelpers';
 import './App.css';
 
 const THRONE = { row: 5, col: 5 };
@@ -36,7 +38,11 @@ function ownsPiece(square: string | null, side: Side): boolean {
 export default function App() {
   const [lang, setLang] = useState<Lang>(detectLang);
   const [game, setGame] = useState<GameView | null>(null);
-  const [mode, setMode] = useState<GameMode>('two-player');
+  const [uiMode, setUiMode] = useState<GameMode | 'online'>(() =>
+    new URLSearchParams(window.location.search).has('join') || loadSession(window.localStorage) ? 'online' : 'two-player',
+  );
+  const online = uiMode === 'online';
+  const mode: GameMode = online ? 'two-player' : uiMode;
   const [difficulty, setDifficulty] = useState<Difficulty>('medium');
   const [selected, setSelected] = useState<Pos | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -160,9 +166,10 @@ export default function App() {
       <section className="controls">
         <label>
           {t('mode')}{' '}
-          <select value={mode} onChange={(e) => setMode(e.target.value as GameMode)}>
+          <select value={uiMode} onChange={(e) => setUiMode(e.target.value as GameMode | 'online')}>
             <option value="two-player">{t('modeTwoPlayer')}</option>
             <option value="vs-computer">{t('modeVsComputer')}</option>
+            <option value="online">{t('modeOnline')}</option>
           </select>
         </label>
         {mode === 'vs-computer' && (
@@ -175,12 +182,14 @@ export default function App() {
             </select>
           </label>
         )}
-        <button onClick={start} disabled={busy}>{t('newGame')}</button>
+        {!online && <button onClick={start} disabled={busy}>{t('newGame')}</button>}
       </section>
 
-      {error && <p className="error" role="alert">{error}</p>}
+      {online && <OnlineGame t={t} />}
 
-      {game && (
+      {!online && error && <p className="error" role="alert">{error}</p>}
+
+      {!online && game && (
         <>
           <p className="status">{statusText(game)}</p>
           <div className="board" role="grid" aria-label={t('board')}>

@@ -19,6 +19,12 @@ describe('translator', () => {
 });
 
 describe('messages', () => {
+  it('has the same keys in German and English', () => {
+    const t = (lang: 'de' | 'en') => translator(lang);
+    expect(t('de')('modeOnline')).not.toBe(t('en')('modeOnline'));
+    expect(t('en')('onlineCode', { code: 'ABC234' })).toBe('Code: ABC234');
+  });
+
   it('translates every difficulty in both languages', () => {
     for (const lang of ['de', 'en'] as const) {
       const t = translator(lang);
