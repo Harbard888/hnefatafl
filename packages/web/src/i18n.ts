@@ -68,6 +68,7 @@ const messages = {
     onlineLeave: 'Spiel verlassen',
     onlineNotYourTurn: 'Du bist nicht am Zug.',
     onlineReconnecting: 'Verbindung unterbrochen, versuche erneut …',
+    onlineRestoring: 'Spiel wird wiederhergestellt …',
   },
   en: {
     title: 'Hnefatafl',
@@ -136,6 +137,7 @@ const messages = {
     onlineLeave: 'Leave game',
     onlineNotYourTurn: "It's not your turn.",
     onlineReconnecting: 'Connection lost, retrying…',
+    onlineRestoring: 'Restoring your game…',
   },
 } as const satisfies Record<Lang, Record<string, string>>;
 
