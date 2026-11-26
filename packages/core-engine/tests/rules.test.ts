@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createInitialBoard } from '../src/board.js';
-import { capturesAfterMove, isEncircled, isKingCaptured, legalDestinations } from '../src/rules.js';
+import { capturesAfterMove, hasExitFort, isEncircled, isKingCaptured, legalDestinations } from '../src/rules.js';
 import { pos, setup } from './helpers.js';
 
 describe('initial position', () => {
@@ -74,6 +74,30 @@ describe('king capture', () => {
   it('can never be captured on the edge', () => {
     const board = setup({ attackers: [[0, 4], [0, 6], [1, 5]], king: [0, 5] });
     expect(isKingCaptured(board)).toBe(false);
+  });
+});
+
+describe('exit fort', () => {
+  const fort: [number, number][] = [[10, 3], [9, 3], [9, 4], [9, 5], [10, 6]];
+  const attackers: [number, number][] = [[10, 2], [9, 2], [8, 4], [8, 5], [10, 7]];
+
+  it('is recognised when the king on the edge can move inside a sealed, uncapturable fort', () => {
+    expect(hasExitFort(setup({ attackers, defenders: fort, king: [10, 4] }))).toBe(true);
+  });
+
+  it('is not recognised when attackers can reach the king\'s area', () => {
+    const breached = fort.filter(([r, c]) => !(r === 9 && c === 5));
+    expect(hasExitFort(setup({ attackers, defenders: breached, king: [10, 4] }))).toBe(false);
+  });
+
+  it('is not recognised when the king cannot move', () => {
+    expect(hasExitFort(setup({ attackers, defenders: [...fort, [10, 5]], king: [10, 4] }))).toBe(false);
+  });
+
+  it('is not recognised when a wall soldier can be captured', () => {
+    const weak: [number, number][] = [[10, 3], [9, 4], [9, 5], [10, 6], [9, 3]];
+    const open = weak.filter(([r, c]) => !(r === 9 && c === 4));
+    expect(hasExitFort(setup({ attackers, defenders: open, king: [10, 4] }))).toBe(false);
   });
 });
 
