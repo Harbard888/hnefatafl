@@ -1,5 +1,15 @@
 import { useEffect, useState } from 'react';
-import { ApiError, createGame, playMove, type GameMode, type GameView, type Pos, type Side } from './api';
+import {
+  ApiError,
+  createGame,
+  playMove,
+  type GameMode,
+  type GameView,
+  type MoveRecord,
+  type Pos,
+  type Side,
+} from './api';
+import { describeMove, highlightsFor, movesOf } from './moves';
 import { detectLang, translator, type Lang, type MessageKey } from './i18n';
 import './App.css';
 
@@ -28,6 +38,8 @@ export default function App() {
   const [selected, setSelected] = useState<Pos | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [moves, setMoves] = useState<MoveRecord[]>([]);
+  const [batch, setBatch] = useState<MoveRecord[]>([]);
 
   const t = translator(lang);
 
@@ -47,6 +59,28 @@ export default function App() {
     setError(null);
     try {
       setGame(await createGame({ mode, computerSide: 'defender' }));
+      setSelected(null);
+      setMoves([]);
+      setBatch([]);
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // The backend has no undo endpoint, so replay all but the last move in a fresh game.
+  async function undo() {
+    if (!game || game.mode !== 'two-player' || moves.length === 0 || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const remaining = moves.slice(0, -1);
+      let view = await createGame({ mode: 'two-player' });
+      for (const m of remaining) view = await playMove(view.id, m.from, m.to);
+      setGame(view);
+      setMoves(remaining);
+      setBatch(remaining.slice(-1));
       setSelected(null);
     } catch (e) {
       setError(errorMessage(e));
@@ -75,7 +109,11 @@ export default function App() {
     setBusy(true);
     setError(null);
     try {
-      setGame(await playMove(game.id, selected, pos));
+      const next = await playMove(game.id, selected, pos);
+      const added = movesOf(next);
+      setGame(next);
+      setMoves([...moves, ...added]);
+      setBatch(added);
     } catch (e) {
       setError(errorMessage(e));
     } finally {
@@ -99,6 +137,9 @@ export default function App() {
           .map((m) => `${m.to.row},${m.to.col}`)
       : [],
   );
+
+  const highlights = highlightsFor(batch);
+  const canUndo = game?.mode === 'two-player';
 
   return (
     <main className="app">
@@ -138,6 +179,8 @@ export default function App() {
                 if (sameCell(THRONE, pos)) classes.push('throne');
                 if (selected !== null && sameCell(selected, pos)) classes.push('selected');
                 if (targets.has(`${row},${col}`)) classes.push('target');
+                if (highlights.last.has(`${row},${col}`)) classes.push('last');
+                if (highlights.captured.has(`${row},${col}`)) classes.push('captured');
                 const label = t('square', { row, col });
                 return (
                   <button
@@ -152,6 +195,38 @@ export default function App() {
               }),
             )}
           </div>
+          <div className="actions">
+            <button
+              onClick={undo}
+              disabled={busy || !canUndo || moves.length === 0}
+              title={canUndo ? undefined : t('undoUnavailable')}
+            >
+              {t('undo')}
+            </button>
+          </div>
+          <section className="history">
+            <h2>{t('history')}</h2>
+            {moves.length === 0 ? (
+              <p>{t('noMoves')}</p>
+            ) : (
+              <ol>
+                {moves.map((m, i) => (
+                  <li key={i}>
+                    {t(m.side)}: {describeMove(m)}
+                  </li>
+                ))}
+              </ol>
+            )}
+          </section>
+          {game.status.kind === 'won' && (
+            <div className="overlay" role="dialog" aria-modal="true" aria-label={t('gameOver')}>
+              <div className="dialog">
+                <h2>{t('gameOver')}</h2>
+                <p>{statusText(game)}</p>
+                <button onClick={start} disabled={busy}>{t('playAgain')}</button>
+              </div>
+            </div>
+          )}
           {game.computerMove && (
             <p className="info">
               {t('computerMove', {
