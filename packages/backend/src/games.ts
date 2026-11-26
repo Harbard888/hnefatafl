@@ -16,6 +16,11 @@ export interface PlayedMove {
   readonly captured: readonly Pos[];
 }
 
+export interface LegalMove {
+  readonly from: Pos;
+  readonly to: Pos;
+}
+
 export interface GameView {
   readonly id: string;
   readonly mode: GameMode;
@@ -23,6 +28,7 @@ export interface GameView {
   readonly board: Board;
   readonly turn: Side;
   readonly status: GameStatus;
+  readonly legalMoves: readonly LegalMove[];
   readonly playerMove: PlayedMove | null;
   readonly computerMove: PlayedMove | null;
 }
@@ -74,13 +80,16 @@ export class GameStore {
   }
 
   private view(stored: StoredGame, playerMove: PlayedMove | null, computerMove: PlayedMove | null): GameView {
+    const { game } = stored;
+    const ongoing = game.status.kind === 'ongoing';
     return {
       id: stored.id,
       mode: stored.options.mode,
       computerSide: stored.options.mode === 'vs-computer' ? stored.options.computerSide : null,
-      board: stored.game.getBoard(),
-      turn: stored.game.turn,
-      status: stored.game.status,
+      board: game.getBoard(),
+      turn: game.turn,
+      status: game.status,
+      legalMoves: ongoing ? game.legalMoves().map((m) => ({ from: m.from, to: m.to })) : [],
       playerMove,
       computerMove,
     };

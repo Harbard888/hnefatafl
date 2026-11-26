@@ -24,6 +24,16 @@ describe('two-player games', () => {
     expect(res.body.board[0][2]).toBe('attacker');
   });
 
+  it('lists legal moves for the side to move', async () => {
+    const app = createApp();
+    const { id } = await createGame(app);
+    const res = await request(app).get(`/api/games/${id}`);
+    const moves = res.body.legalMoves as { from: typeof from; to: typeof to }[];
+
+    expect(moves).toContainEqual({ from, to });
+    expect(moves.some((m) => m.from.row === 0 && m.from.col === 3 && m.to.row === 1 && m.to.col === 2)).toBe(false);
+  });
+
   it('rejects an illegal move with 400 and leaves the game unchanged', async () => {
     const app = createApp();
     const { id } = await createGame(app);

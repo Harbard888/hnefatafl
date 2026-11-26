@@ -1,0 +1,60 @@
+.app {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 1rem;
+  font-family: system-ui, sans-serif;
+}
+
+.controls {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(11, 1fr);
+  aspect-ratio: 1;
+  gap: 2px;
+  background: #8b5a2b;
+  padding: 4px;
+  margin-top: 1rem;
+}
+
+.cell {
+  background: #e8d3a8;
+  border: none;
+  font-size: clamp(0.7rem, 2.5vw, 1.4rem);
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cell.corner,
+.cell.throne {
+  background: #c9a46a;
+}
+
+.cell.selected {
+  outline: 3px solid #2a6fdb;
+  outline-offset: -3px;
+}
+
+.cell.target::after {
+  content: '';
+  width: 30%;
+  height: 30%;
+  border-radius: 50%;
+  background: rgba(42, 111, 219, 0.5);
+}
+
+.error {
+  color: #b00020;
+}
+
+.status {
+  font-weight: bold;
+}
