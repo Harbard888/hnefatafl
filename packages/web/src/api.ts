@@ -23,10 +23,14 @@ export interface LegalMove {
   to: Pos;
 }
 
+export type Difficulty = 'easy' | 'medium' | 'hard';
+export const DIFFICULTIES: readonly Difficulty[] = ['easy', 'medium', 'hard'];
+
 export interface GameView {
   id: string;
   mode: GameMode;
   computerSide: Side;
+  difficulty: Difficulty | null;
   board: Board;
   turn: Side;
   status: GameStatus;
@@ -38,6 +42,7 @@ export interface GameView {
 export interface CreateOptions {
   mode: GameMode;
   computerSide?: Side;
+  difficulty?: Difficulty;
 }
 
 export class ApiError extends Error {

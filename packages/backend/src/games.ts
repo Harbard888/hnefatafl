@@ -1,12 +1,14 @@
 import { randomUUID } from 'node:crypto';
-import { chooseMove, HnefataflGame, type Board, type GameStatus, type Pos, type Side } from '@hnefatafl/core-engine';
+import { chooseMove, HnefataflGame, type Board, type Difficulty, type GameStatus, type Pos, type Side } from '@hnefatafl/core-engine';
 
 export type GameMode = 'two-player' | 'vs-computer';
 
 export interface GameOptions {
   readonly mode: GameMode;
   readonly computerSide: Side;
-  readonly depth: number;
+  readonly difficulty: Difficulty;
+  /** Optional override of the difficulty's search depth. */
+  readonly depth?: number;
 }
 
 export interface PlayedMove {
@@ -25,6 +27,7 @@ export interface GameView {
   readonly id: string;
   readonly mode: GameMode;
   readonly computerSide: Side | null;
+  readonly difficulty: Difficulty | null;
   readonly board: Board;
   readonly turn: Side;
   readonly status: GameStatus;
@@ -67,7 +70,7 @@ export class GameStore {
 
     let computerMove: PlayedMove | null = null;
     if (options.mode === 'vs-computer' && game.status.kind === 'ongoing' && game.turn === options.computerSide) {
-      const choice = chooseMove(game, { depth: options.depth });
+      const choice = chooseMove(game, { difficulty: options.difficulty, depth: options.depth });
       if (choice !== null) computerMove = this.applyMove(game, options.computerSide, choice.from, choice.to);
     }
 
@@ -86,6 +89,7 @@ export class GameStore {
       id: stored.id,
       mode: stored.options.mode,
       computerSide: stored.options.mode === 'vs-computer' ? stored.options.computerSide : null,
+      difficulty: stored.options.mode === 'vs-computer' ? stored.options.difficulty : null,
       board: game.getBoard(),
       turn: game.turn,
       status: game.status,
