@@ -4,7 +4,9 @@ import type { AddressInfo } from 'node:net';
 import path from 'node:path';
 import { createApp } from '@hnefatafl/backend';
 
-const webDist = path.resolve(import.meta.dirname, '../../web/dist');
+const webDist = app.isPackaged
+  ? path.join(process.resourcesPath, 'web')
+  : path.resolve(import.meta.dirname, '../../web/dist');
 const smokeTest = process.argv.includes('--smoke');
 
 async function startServer(): Promise<string> {
