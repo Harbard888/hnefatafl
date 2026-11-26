@@ -8,6 +8,8 @@ Digitale Umsetzung des Wikinger-Strategiespiels Hnefatafl (Copenhagen-Regeln, 11
 
 ## Umgesetzte Regeln
 
+Die vollständigen Regeln stehen in [docs/REGELN.md](docs/REGELN.md).
+
 - Alle Figuren ziehen wie Türme im Schach. Kein Überspringen.
 - Soldaten dürfen Thron und Ecken nicht betreten. Der König darf beides.
 - Schlagen durch Einschließen zwischen zwei Figuren. Der König ist bewaffnet.
