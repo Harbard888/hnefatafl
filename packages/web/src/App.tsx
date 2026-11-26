@@ -3,6 +3,8 @@ import {
   ApiError,
   createGame,
   playMove,
+  DIFFICULTIES,
+  type Difficulty,
   type GameMode,
   type GameView,
   type MoveRecord,
@@ -10,7 +12,7 @@ import {
   type Side,
 } from './api';
 import { describeMove, highlightsFor, movesOf } from './moves';
-import { detectLang, translator, type Lang, type MessageKey } from './i18n';
+import { DIFFICULTY_KEYS, detectLang, translator, type Lang, type MessageKey } from './i18n';
 import './App.css';
 
 const THRONE = { row: 5, col: 5 };
@@ -35,6 +37,7 @@ export default function App() {
   const [lang, setLang] = useState<Lang>(detectLang);
   const [game, setGame] = useState<GameView | null>(null);
   const [mode, setMode] = useState<GameMode>('two-player');
+  const [difficulty, setDifficulty] = useState<Difficulty>('medium');
   const [selected, setSelected] = useState<Pos | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -58,7 +61,7 @@ export default function App() {
     setBusy(true);
     setError(null);
     try {
-      setGame(await createGame({ mode, computerSide: 'defender' }));
+      setGame(await createGame({ mode, computerSide: 'defender', difficulty }));
       setSelected(null);
       setMoves([]);
       setBatch([]);
@@ -162,6 +165,16 @@ export default function App() {
             <option value="vs-computer">{t('modeVsComputer')}</option>
           </select>
         </label>
+        {mode === 'vs-computer' && (
+          <label>
+            {t('difficulty')}{' '}
+            <select value={difficulty} onChange={(e) => setDifficulty(e.target.value as Difficulty)}>
+              {DIFFICULTIES.map((d) => (
+                <option key={d} value={d}>{t(DIFFICULTY_KEYS[d])}</option>
+              ))}
+            </select>
+          </label>
+        )}
         <button onClick={start} disabled={busy}>{t('newGame')}</button>
       </section>
 
@@ -223,7 +236,17 @@ export default function App() {
               <div className="dialog">
                 <h2>{t('gameOver')}</h2>
                 <p>{statusText(game)}</p>
-                <button onClick={start} disabled={busy}>{t('playAgain')}</button>
+                {mode === 'vs-computer' && (
+          <label>
+            {t('difficulty')}{' '}
+            <select value={difficulty} onChange={(e) => setDifficulty(e.target.value as Difficulty)}>
+              {DIFFICULTIES.map((d) => (
+                <option key={d} value={d}>{t(DIFFICULTY_KEYS[d])}</option>
+              ))}
+            </select>
+          </label>
+        )}
+        <button onClick={start} disabled={busy}>{t('playAgain')}</button>
               </div>
             </div>
           )}

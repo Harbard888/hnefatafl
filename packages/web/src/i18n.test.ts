@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { detectLang, translator } from './i18n';
+import { DIFFICULTY_KEYS, detectLang, translator } from './i18n';
 
 describe('translator', () => {
   it('interpolates named variables', () => {
@@ -15,6 +15,16 @@ describe('translator', () => {
 
   it('keeps unknown placeholders visible', () => {
     expect(translator('en')('turn')).toBe('{side} to move');
+  });
+});
+
+describe('messages', () => {
+  it('translates every difficulty in both languages', () => {
+    for (const lang of ['de', 'en'] as const) {
+      const t = translator(lang);
+      for (const key of Object.values(DIFFICULTY_KEYS)) expect(t(key)).not.toBe('');
+    }
+    expect(translator('de')('difficultyHard')).not.toBe(translator('en')('difficultyHard'));
   });
 });
 

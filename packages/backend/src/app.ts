@@ -1,5 +1,5 @@
 import express, { type NextFunction, type Request, type Response } from 'express';
-import type { Pos, Side } from '@hnefatafl/core-engine';
+import { DEFAULT_DIFFICULTY, DIFFICULTIES, isDifficulty, type Pos, type Side } from '@hnefatafl/core-engine';
 import { GameStore, type GameMode, type GameOptions } from './games.js';
 
 const MODES: readonly GameMode[] = ['two-player', 'vs-computer'];
@@ -19,14 +19,16 @@ function parseOptions(body: unknown): GameOptions | string {
   const input = (body ?? {}) as Record<string, unknown>;
   const mode = input.mode ?? 'two-player';
   const computerSide = input.computerSide ?? 'defender';
-  const depth = input.depth ?? 2;
+  const difficulty = input.difficulty ?? DEFAULT_DIFFICULTY;
+  const depth = input.depth;
 
   if (!MODES.includes(mode as GameMode)) return `mode must be one of ${MODES.join(', ')}`;
   if (!SIDES.includes(computerSide as Side)) return `computerSide must be one of ${SIDES.join(', ')}`;
-  if (!Number.isInteger(depth) || (depth as number) < 1 || (depth as number) > MAX_DEPTH) {
+  if (!isDifficulty(difficulty)) return `difficulty must be one of ${DIFFICULTIES.join(', ')}`;
+  if (depth !== undefined && (!Number.isInteger(depth) || (depth as number) < 1 || (depth as number) > MAX_DEPTH)) {
     return `depth must be an integer from 1 to ${MAX_DEPTH}`;
   }
-  return { mode: mode as GameMode, computerSide: computerSide as Side, depth: depth as number };
+  return { mode: mode as GameMode, computerSide: computerSide as Side, difficulty, depth: depth as number | undefined };
 }
 
 export function createApp(store: GameStore = new GameStore()): express.Express {

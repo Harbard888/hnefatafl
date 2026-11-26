@@ -73,6 +73,34 @@ describe('games against the computer', () => {
   });
 });
 
+describe('difficulty', () => {
+  it('reports the chosen difficulty and defaults to medium', async () => {
+    const app = createApp();
+    const hard = await request(app).post('/api/games').send({ mode: 'vs-computer', difficulty: 'hard' });
+    expect(hard.body.difficulty).toBe('hard');
+    const dflt = await request(app).post('/api/games').send({ mode: 'vs-computer' });
+    expect(dflt.body.difficulty).toBe('medium');
+    const twoPlayer = await request(app).post('/api/games').send({ mode: 'two-player' });
+    expect(twoPlayer.body.difficulty).toBeNull();
+  });
+
+  it('plays a computer move on every difficulty', async () => {
+    const app = createApp();
+    for (const difficulty of ['easy', 'medium', 'hard']) {
+      const created = await createGame(app, { mode: 'vs-computer', difficulty });
+      const res = await request(app).post(`/api/games/${created.id}/moves`).send({ from, to });
+      expect(res.status).toBe(200);
+      expect(res.body.computerMove).not.toBeNull();
+    }
+  });
+
+  it('rejects unknown difficulties', async () => {
+    const res = await request(createApp()).post('/api/games').send({ mode: 'vs-computer', difficulty: 'insane' });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toContain('difficulty');
+  });
+});
+
 describe('validation', () => {
   it('rejects unknown modes and out-of-range search depths', async () => {
     const app = createApp();

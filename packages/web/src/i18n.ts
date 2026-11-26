@@ -7,6 +7,10 @@ const messages = {
     mode: 'Modus',
     modeTwoPlayer: 'Zwei Spieler',
     modeVsComputer: 'Gegen den Computer (Verteidiger)',
+    difficulty: 'Schwierigkeit',
+    difficultyEasy: 'Leicht',
+    difficultyMedium: 'Mittel',
+    difficultyHard: 'Schwer',
     newGame: 'Neues Spiel',
     board: 'Spielbrett',
     square: 'Feld {row},{col}',
@@ -36,6 +40,10 @@ const messages = {
     mode: 'Mode',
     modeTwoPlayer: 'Two players',
     modeVsComputer: 'Against the computer (defenders)',
+    difficulty: 'Difficulty',
+    difficultyEasy: 'Easy',
+    difficultyMedium: 'Medium',
+    difficultyHard: 'Hard',
     newGame: 'New game',
     board: 'Board',
     square: 'Square {row},{col}',
@@ -62,6 +70,12 @@ const messages = {
 } as const satisfies Record<Lang, Record<string, string>>;
 
 export type MessageKey = keyof typeof messages.de;
+export const DIFFICULTY_KEYS = {
+  easy: 'difficultyEasy',
+  medium: 'difficultyMedium',
+  hard: 'difficultyHard',
+} as const satisfies Record<string, MessageKey>;
+
 export type Translate = (key: MessageKey, vars?: Record<string, string | number>) => string;
 
 export function detectLang(): Lang {
