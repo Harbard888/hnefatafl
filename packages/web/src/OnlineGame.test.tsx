@@ -185,6 +185,26 @@ describe('online play', () => {
     await waitFor(() => expect(screen.queryByText(t('onlineReconnecting'))).toBeNull(), { timeout: 4000 });
   });
 
+  it('shows a restoring state instead of the lobby until the first poll succeeds', async () => {
+    let resolve!: (v: OnlineView) => void;
+    fetchMock.mockReturnValueOnce(new Promise<OnlineView>((r) => (resolve = r)));
+    render(<OnlineGame t={t} />);
+    expect(screen.getByText(t('onlineRestoring'))).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Create game' })).toBeNull();
+    resolve(view());
+    await screen.findByText(YOUR_TURN);
+    expect(screen.queryByText(t('onlineRestoring'))).toBeNull();
+  });
+
+  it('shows the reconnecting notice when the first poll fails, keeping the session', async () => {
+    fetchMock.mockRejectedValueOnce(new TypeError('network')).mockResolvedValue(view());
+    render(<OnlineGame t={t} />);
+    expect(await screen.findByText(t('onlineReconnecting'))).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Create game' })).toBeNull();
+    expect(stored()).not.toBeNull();
+    await screen.findByText(YOUR_TURN, undefined, { timeout: 4000 });
+  });
+
   it.each([401, 404])('drops an expired session on a %i poll', async (status) => {
     fetchMock.mockRejectedValue(new ApiError('gone', status));
     render(<OnlineGame t={t} />);

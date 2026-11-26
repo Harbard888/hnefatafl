@@ -149,6 +149,18 @@ export default function OnlineGame({ t }: { t: Translate }) {
     }
   }
 
+  if (session && !view) {
+    return (
+      <section className="lobby">
+        {error && <p className="error" role="alert">{error}</p>}
+        <p className="info" role="status">{offline ? t('onlineReconnecting') : t('onlineRestoring')}</p>
+        <div className="actions">
+          <button onClick={leave}>{t('onlineLeave')}</button>
+        </div>
+      </section>
+    );
+  }
+
   if (!session || !view) {
     return (
       <section className="lobby">
