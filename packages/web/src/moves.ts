@@ -1,4 +1,20 @@
-import type { GameView, MoveRecord, Pos } from './api';
+import type { GameView, MoveRecord, Pos, Variant } from './api';
+
+export interface SpecialSquares {
+  throne: Pos;
+  /** Squares only the king may enter; empty for variants with ordinary corners. */
+  corners: Set<string>;
+}
+
+/** Throne and restricted corners for a board of `size` squares; the throne is always the centre. */
+export function specialSquares(size: number, variant: Variant = 'copenhagen'): SpecialSquares {
+  const last = size - 1;
+  const mid = last / 2;
+  const corners = variant === 'tablut'
+    ? new Set<string>()
+    : new Set([`0,0`, `0,${last}`, `${last},0`, `${last},${last}`]);
+  return { throne: { row: mid, col: mid }, corners };
+}
 
 export function key(pos: Pos): string {
   return `${pos.row},${pos.col}`;

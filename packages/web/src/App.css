@@ -22,7 +22,7 @@
 
 .board {
   display: grid;
-  grid-template-columns: repeat(11, 1fr);
+  grid-template-columns: repeat(var(--board-size, 11), 1fr);
   aspect-ratio: 1;
   gap: 2px;
   background: #8b5a2b;

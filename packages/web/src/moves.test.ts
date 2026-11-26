@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { MoveRecord } from './api';
-import { describeMove, highlightsFor } from './moves';
+import { describeMove, highlightsFor, specialSquares } from './moves';
 
 const move = (captured: MoveRecord['captured']): MoveRecord => ({
   side: 'attacker',
@@ -27,5 +27,15 @@ describe('highlightsFor', () => {
 
   it('is empty without moves', () => {
     expect(highlightsFor([])).toEqual({ last: new Set(), captured: new Set() });
+  });
+});
+
+describe('specialSquares', () => {
+  it('puts the throne in the centre and restricts corners per variant', () => {
+    expect(specialSquares(11)).toEqual({ throne: { row: 5, col: 5 }, corners: new Set(['0,0', '0,10', '10,0', '10,10']) });
+    expect(specialSquares(7, 'brandubh').throne).toEqual({ row: 3, col: 3 });
+    expect(specialSquares(7, 'brandubh').corners.has('6,6')).toBe(true);
+    expect(specialSquares(9, 'tablut').throne).toEqual({ row: 4, col: 4 });
+    expect(specialSquares(9, 'tablut').corners.size).toBe(0);
   });
 });

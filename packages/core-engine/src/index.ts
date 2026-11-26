@@ -1,5 +1,5 @@
 export * from './types.js';
-export { createInitialBoard, THRONE, CORNERS } from './board.js';
+export { createInitialBoard, THRONE, CORNERS, cornersOf } from './board.js';
 export { legalDestinations, capturesAfterMove, isKingCaptured, isEncircled, hasLegalMoves } from './rules.js';
 export { HnefataflGame, type GameSetup } from './game.js';
 export {
@@ -12,3 +12,16 @@ export {
   type Difficulty,
   type DifficultyProfile,
 } from './ai.js';
+export {
+  BRANDUBH,
+  COPENHAGEN,
+  TABLUT,
+  VARIANTS,
+  VARIANT_IDS,
+  DEFAULT_VARIANT,
+  getVariant,
+  isVariantId,
+  type Variant,
+  type VariantId,
+} from './variants.js';
+

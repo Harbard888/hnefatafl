@@ -1,25 +1,25 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import {
   ApiError,
   createGame,
   playMove,
   DIFFICULTIES,
   type Difficulty,
+  type Variant,
+  VARIANTS,
   type GameMode,
   type GameView,
   type MoveRecord,
   type Pos,
   type Side,
 } from './api';
-import { describeMove, highlightsFor, movesOf } from './moves';
+import { describeMove, highlightsFor, movesOf, specialSquares } from './moves';
 import { MusicPlayer } from './MusicPlayer';
-import { DIFFICULTY_KEYS, detectLang, translator, type Lang, type MessageKey } from './i18n';
+import { DIFFICULTY_KEYS, VARIANT_KEYS, detectLang, translator, type Lang, type MessageKey } from './i18n';
 import OnlineGame from './OnlineGame';
 import { loadSession } from './onlineHelpers';
 import './App.css';
 
-const THRONE = { row: 5, col: 5 };
-const CORNERS = new Set(['0,0', '0,10', '10,0', '10,10']);
 
 const SYMBOLS: Record<string, string> = {
   attacker: '⚫',
@@ -45,6 +45,7 @@ export default function App() {
   const online = uiMode === 'online';
   const mode: GameMode = online ? 'two-player' : uiMode;
   const [difficulty, setDifficulty] = useState<Difficulty>('medium');
+  const [variant, setVariant] = useState<Variant>('copenhagen');
   const [selected, setSelected] = useState<Pos | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -68,7 +69,7 @@ export default function App() {
     setBusy(true);
     setError(null);
     try {
-      setGame(await createGame({ mode, computerSide: 'defender', difficulty }));
+      setGame(await createGame({ mode, computerSide: 'defender', difficulty, variant }));
       setSelected(null);
       setMoves([]);
       setBatch([]);
@@ -86,7 +87,7 @@ export default function App() {
     setError(null);
     try {
       const remaining = moves.slice(0, -1);
-      let view = await createGame({ mode: 'two-player' });
+      let view = await createGame({ mode: 'two-player', variant: game.variant ?? 'copenhagen' });
       for (const m of remaining) view = await playMove(view.id, m.from, m.to);
       setGame(view);
       setMoves(remaining);
@@ -149,6 +150,7 @@ export default function App() {
   );
 
   const highlights = highlightsFor(batch);
+  const special = specialSquares(game?.board.length ?? 11, game?.variant);
   const canUndo = game?.mode === 'two-player';
 
   return (
@@ -175,6 +177,16 @@ export default function App() {
             <option value="online">{t('modeOnline')}</option>
           </select>
         </label>
+        {!online && (
+          <label>
+            {t('variant')}{' '}
+            <select value={variant} onChange={(e) => setVariant(e.target.value as Variant)}>
+              {VARIANTS.map((v) => (
+                <option key={v} value={v}>{t(VARIANT_KEYS[v])}</option>
+              ))}
+            </select>
+          </label>
+        )}
         {mode === 'vs-computer' && (
           <label>
             {t('difficulty')}{' '}
@@ -195,13 +207,18 @@ export default function App() {
       {!online && game && (
         <>
           <p className="status">{statusText(game)}</p>
-          <div className="board" role="grid" aria-label={t('board')}>
+          <div
+            className="board"
+            role="grid"
+            aria-label={t('board')}
+            style={{ '--board-size': game.board.length } as CSSProperties}
+          >
             {game.board.map((rowCells, row) =>
               rowCells.map((square, col) => {
                 const pos = { row, col };
                 const classes = ['cell'];
-                if (CORNERS.has(`${row},${col}`)) classes.push('corner');
-                if (sameCell(THRONE, pos)) classes.push('throne');
+                if (special.corners.has(`${row},${col}`)) classes.push('corner');
+                if (sameCell(special.throne, pos)) classes.push('throne');
                 if (selected !== null && sameCell(selected, pos)) classes.push('selected');
                 if (targets.has(`${row},${col}`)) classes.push('target');
                 if (highlights.last.has(`${row},${col}`)) classes.push('last');

@@ -3,7 +3,9 @@ import {
   cloneBoard,
   createInitialBoard,
   findKing,
-  isCorner,
+  inBounds,
+  isEdge,
+  cornersOf,
   positionsOf,
   samePos,
   sideOf,
@@ -16,11 +18,16 @@ import {
   legalDestinations,
   opposite,
 } from './rules.js';
+import { COPENHAGEN, type Variant } from './variants.js';
 import type { Board, GameStatus, Move, MoveResult, Pos, Side, WinReason } from './types.js';
 
 export interface GameSetup {
-  readonly board: Board;
-  readonly turn: Side;
+  /** Defaults to the variant's starting position. */
+  readonly board?: Board;
+  /** Defaults to the attackers. */
+  readonly turn?: Side;
+  /** Defaults to Copenhagen. */
+  readonly variant?: Variant;
 }
 
 const REPETITION_LIMIT = 3;
@@ -36,13 +43,15 @@ function positionKey(board: Board, turn: Side): string {
 }
 
 export class HnefataflGame {
+  readonly variant: Variant;
   private board: Board;
   private currentTurn: Side;
   private currentStatus: GameStatus = ONGOING;
   private readonly positionCounts = new Map<string, number>();
 
   constructor(setup?: GameSetup) {
-    this.board = setup ? cloneBoard(setup.board) : createInitialBoard();
+    this.variant = setup?.variant ?? COPENHAGEN;
+    this.board = setup?.board ? cloneBoard(setup.board) : createInitialBoard(this.variant);
     this.currentTurn = setup?.turn ?? 'attacker';
     this.recordPosition(this.board, this.currentTurn);
   }
@@ -67,11 +76,15 @@ export class HnefataflGame {
   move(from: Pos, to: Pos): MoveResult {
     if (this.currentStatus.kind !== 'ongoing') throw new Error('Game is already over');
 
+    if (!inBounds(from, this.variant) || !inBounds(to, this.variant)) {
+      throw new Error(`Position outside the ${this.variant.size}x${this.variant.size} board`);
+    }
+
     const piece = at(this.board, from);
     if (piece === null || sideOf(piece) !== this.currentTurn) {
       throw new Error(`No ${this.currentTurn} piece at (${from.row}, ${from.col})`);
     }
-    if (!legalDestinations(this.board, from).some((dest) => samePos(dest, to))) {
+    if (!legalDestinations(this.board, from, this.variant).some((dest) => samePos(dest, to))) {
       throw new Error(`Illegal move to (${to.row}, ${to.col})`);
     }
 
@@ -93,7 +106,7 @@ export class HnefataflGame {
     board[to.row][to.col] = board[from.row][from.col];
     board[from.row][from.col] = null;
 
-    const captured = capturesAfterMove(board, to, mover);
+    const captured = capturesAfterMove(board, to, mover, this.variant);
     for (const pos of captured) board[pos.row][pos.col] = null;
 
     return { board, captured, turn: opposite(mover) };
@@ -101,7 +114,7 @@ export class HnefataflGame {
 
   private allowedMoves(side: Side): Move[] {
     return positionsOf(this.board, side).flatMap((from) =>
-      legalDestinations(this.board, from)
+      legalDestinations(this.board, from, this.variant)
         .filter((to) => {
           const next = this.successor(from, to);
           return !this.isThirdOccurrence(next.board, next.turn);
@@ -112,10 +125,18 @@ export class HnefataflGame {
 
   private evaluate(): GameStatus {
     const king = findKing(this.board);
-    if (king !== null && isCorner(king)) return won('defender', 'king-escaped');
-    if (isKingCaptured(this.board)) return won('attacker', 'king-captured');
-    if (hasExitFort(this.board)) return won('defender', 'exit-fort');
-    if (isEncircled(this.board)) return won('attacker', 'encirclement');
+    const v = this.variant;
+    const escaped = king !== null && (v.escape === 'edge'
+      ? isEdge(king, v)
+      : cornersOf(v).some((corner) => samePos(corner, king)));
+    if (escaped) return won('defender', 'king-escaped');
+    // A weak king is only captured by an attacker's move, never by stepping between attackers itself.
+    const attackerJustMoved = this.currentTurn === 'defender';
+    if ((v.kingCapture === 'four-sides' || attackerJustMoved) && isKingCaptured(this.board, v)) {
+      return won('attacker', 'king-captured');
+    }
+    if (hasExitFort(this.board, v)) return won('defender', 'exit-fort');
+    if (isEncircled(this.board, v)) return won('attacker', 'encirclement');
     if (!this.hasAllowedMove(this.currentTurn)) {
       return won(opposite(this.currentTurn), 'no-legal-moves');
     }
@@ -124,7 +145,7 @@ export class HnefataflGame {
 
   private hasAllowedMove(side: Side): boolean {
     return positionsOf(this.board, side).some((from) =>
-      legalDestinations(this.board, from).some((to) => {
+      legalDestinations(this.board, from, this.variant).some((to) => {
         const next = this.successor(from, to);
         return !this.isThirdOccurrence(next.board, next.turn);
       }),
@@ -140,3 +161,4 @@ export class HnefataflGame {
     this.positionCounts.set(key, (this.positionCounts.get(key) ?? 0) + 1);
   }
 }
+

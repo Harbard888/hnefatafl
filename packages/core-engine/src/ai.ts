@@ -1,4 +1,4 @@
-import { CORNERS, findKing } from './board.js';
+import { cornersOf, findKing } from './board.js';
 import { HnefataflGame } from './game.js';
 import type { Board, Move, Pos } from './types.js';
 
@@ -45,7 +45,7 @@ const WIN_SCORE = 100_000;
 class Timeout extends Error {}
 
 function cloneGame(game: HnefataflGame): HnefataflGame {
-  return new HnefataflGame({ board: game.getBoard(), turn: game.turn });
+  return new HnefataflGame({ board: game.getBoard(), turn: game.turn, variant: game.variant });
 }
 
 function manhattan(a: Pos, b: Pos): number {
@@ -60,7 +60,7 @@ const DIRS = [
 ];
 
 // Walks from the king until blocked; reports whether the edge was reached and whether it ended on a corner.
-function ray(board: Board, king: Pos, dir: { row: number; col: number }): { edge: boolean; corner: boolean } {
+function ray(board: Board, king: Pos, dir: { row: number; col: number }, restrictedCorners: boolean): { edge: boolean; corner: boolean } {
   const last = board.length - 1;
   let row = king.row + dir.row;
   let col = king.col + dir.col;
@@ -68,7 +68,7 @@ function ray(board: Board, king: Pos, dir: { row: number; col: number }): { edge
     if (board[row][col] !== null) return { edge: false, corner: false };
     const onRowEdge = row === 0 || row === last;
     const onColEdge = col === 0 || col === last;
-    if (onRowEdge && onColEdge) return { edge: true, corner: true };
+    if (onRowEdge && onColEdge) return { edge: true, corner: restrictedCorners };
     if (onRowEdge || onColEdge) return { edge: true, corner: false };
     row += dir.row;
     col += dir.col;
@@ -79,6 +79,8 @@ function ray(board: Board, king: Pos, dir: { row: number; col: number }): { edge
 // Scores from the defenders' perspective: positive favours defenders, negative favours attackers.
 function evaluate(game: HnefataflGame): number {
   const board = game.getBoard();
+  const variant = game.variant;
+  const last = variant.size - 1;
   let attackers = 0;
   let defenders = 0;
   let king: Pos | null = null;
@@ -96,16 +98,23 @@ function evaluate(game: HnefataflGame): number {
   if (king === null) return score;
 
   const kingPos: Pos = king;
-  const nearestCorner = Math.min(...CORNERS.map((corner) => manhattan(kingPos, corner)));
-  score += (20 - nearestCorner) * 2;
+  const cornerEscape = variant.escape === 'corner';
+  if (cornerEscape) {
+    const nearestCorner = Math.min(...cornersOf(variant).map((corner) => manhattan(kingPos, corner)));
+    score += (2 * last - nearestCorner) * 2;
+  } else {
+    const edgeDistance = Math.min(kingPos.row, kingPos.col, last - kingPos.row, last - kingPos.col);
+    score += (last / 2 - edgeDistance) * 8;
+  }
 
   let cornerLines = 0;
   let edgeLines = 0;
   let adjacentAttackers = 0;
   for (const dir of DIRS) {
-    const result = ray(board, kingPos, dir);
-    if (result.corner) cornerLines++;
-    else if (result.edge) edgeLines++;
+    const result = ray(board, kingPos, dir, variant.restrictedCorners);
+    if (result.corner && cornerEscape) cornerLines++;
+    else if (result.edge && cornerEscape) edgeLines++;
+    else if (result.edge) cornerLines++;
     if (board[kingPos.row + dir.row]?.[kingPos.col + dir.col] === 'attacker') adjacentAttackers++;
   }
 
@@ -134,11 +143,14 @@ function sameMove(a: Move | null, b: Move): boolean {
 function orderMoves(game: HnefataflGame, moves: Move[], preferred: Move | null): Move[] {
   const king = findKing(game.getBoard());
   const defending = game.turn === 'defender';
+  const cornerEscape = game.variant.escape === 'corner';
   const priority = (move: Move): number => {
     if (sameMove(preferred, move)) return -1e9;
     if (king === null) return 0;
     if (move.from.row === king.row && move.from.col === king.col) {
-      const best = Math.min(...CORNERS.map((c) => manhattan(move.to, c)));
+      const best = cornerEscape
+        ? Math.min(...cornersOf(game.variant).map((c) => manhattan(move.to, c)))
+        : Math.min(move.to.row, move.to.col, game.variant.size - 1 - move.to.row, game.variant.size - 1 - move.to.col);
       return defending ? best - 100 : best;
     }
     return manhattan(move.to, king);
@@ -260,3 +272,4 @@ export function chooseMove(game: HnefataflGame, options: AiOptions = {}): Move |
   }
   return best.move;
 }
+

@@ -1,5 +1,15 @@
 import { randomUUID } from 'node:crypto';
-import { chooseMove, HnefataflGame, type Board, type Difficulty, type GameStatus, type Pos, type Side } from '@hnefatafl/core-engine';
+import {
+  chooseMove,
+  getVariant,
+  HnefataflGame,
+  type Board,
+  type Difficulty,
+  type GameStatus,
+  type Pos,
+  type Side,
+  type VariantId,
+} from '@hnefatafl/core-engine';
 
 export type GameMode = 'two-player' | 'vs-computer';
 
@@ -9,6 +19,8 @@ export interface GameOptions {
   readonly difficulty: Difficulty;
   /** Optional override of the difficulty's search depth. */
   readonly depth?: number;
+  /** Rules variant; defaults to Copenhagen. */
+  readonly variant?: VariantId;
 }
 
 export interface PlayedMove {
@@ -26,6 +38,7 @@ export interface LegalMove {
 export interface GameView {
   readonly id: string;
   readonly mode: GameMode;
+  readonly variant: VariantId;
   readonly computerSide: Side | null;
   readonly difficulty: Difficulty | null;
   readonly board: Board;
@@ -46,7 +59,7 @@ export class GameStore {
   private readonly games = new Map<string, StoredGame>();
 
   create(options: GameOptions): GameView {
-    const stored: StoredGame = { id: randomUUID(), options, game: new HnefataflGame() };
+    const stored: StoredGame = { id: randomUUID(), options, game: new HnefataflGame({ variant: getVariant(options.variant) }) };
     this.games.set(stored.id, stored);
     return this.view(stored, null, null);
   }
@@ -88,6 +101,7 @@ export class GameStore {
     return {
       id: stored.id,
       mode: stored.options.mode,
+      variant: game.variant.id,
       computerSide: stored.options.mode === 'vs-computer' ? stored.options.computerSide : null,
       difficulty: stored.options.mode === 'vs-computer' ? stored.options.difficulty : null,
       board: game.getBoard(),

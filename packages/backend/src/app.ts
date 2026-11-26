@@ -1,13 +1,18 @@
 import express, { type NextFunction, type Request, type Response } from 'express';
-import { DEFAULT_DIFFICULTY, DIFFICULTIES, isDifficulty, type Pos, type Side } from '@hnefatafl/core-engine';
+import { DEFAULT_DIFFICULTY, DIFFICULTIES, DEFAULT_VARIANT, isDifficulty, isVariantId, VARIANT_IDS, type Pos, type Side, type VariantId } from '@hnefatafl/core-engine';
 import { GameStore, type GameMode, type GameOptions } from './games.js';
 
 import { OnlineError, OnlineStore, type SideChoice } from './online.js';
 
 const MODES: readonly GameMode[] = ['two-player', 'vs-computer'];
 const SIDES: readonly Side[] = ['attacker', 'defender'];
-const BOARD_SIZE = 11;
+const BOARD_SIZE = 11; // largest supported board; the engine rejects positions outside a variant's own board
 const MAX_DEPTH = 3;
+
+function parseVariant(value: unknown): VariantId | string {
+  const variant = value ?? DEFAULT_VARIANT;
+  return isVariantId(variant) ? variant : `variant must be one of ${VARIANT_IDS.join(', ')}`;
+}
 
 function isPos(value: unknown): value is Pos {
   if (typeof value !== 'object' || value === null) return false;
@@ -23,14 +28,16 @@ function parseOptions(body: unknown): GameOptions | string {
   const computerSide = input.computerSide ?? 'defender';
   const difficulty = input.difficulty ?? DEFAULT_DIFFICULTY;
   const depth = input.depth;
+  const variant = parseVariant(input.variant);
 
+  if (!isVariantId(variant)) return variant;
   if (!MODES.includes(mode as GameMode)) return `mode must be one of ${MODES.join(', ')}`;
   if (!SIDES.includes(computerSide as Side)) return `computerSide must be one of ${SIDES.join(', ')}`;
   if (!isDifficulty(difficulty)) return `difficulty must be one of ${DIFFICULTIES.join(', ')}`;
   if (depth !== undefined && (!Number.isInteger(depth) || (depth as number) < 1 || (depth as number) > MAX_DEPTH)) {
     return `depth must be an integer from 1 to ${MAX_DEPTH}`;
   }
-  return { mode: mode as GameMode, computerSide: computerSide as Side, difficulty, depth: depth as number | undefined };
+  return { mode: mode as GameMode, computerSide: computerSide as Side, difficulty, depth: depth as number | undefined, variant };
 }
 
 export function createApp(
@@ -105,7 +112,12 @@ export function createApp(
       res.status(400).json({ error: `side must be one of random, ${SIDES.join(', ')}` });
       return;
     }
-    res.status(201).json(onlineStore.create(side as SideChoice));
+    const variant = parseVariant(((req.body ?? {}) as Record<string, unknown>).variant);
+    if (!isVariantId(variant)) {
+      res.status(400).json({ error: variant });
+      return;
+    }
+    res.status(201).json(onlineStore.create(side as SideChoice, variant));
   }));
 
   app.post('/api/online/games/:code/join', online((req, res) => {

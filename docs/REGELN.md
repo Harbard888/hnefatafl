@@ -14,6 +14,7 @@ Ein asymmetrisches Strategie-Brettspiel der Wikinger (auch "Wikinger-Schach" gen
 6. [Gewinnbedingungen](#gewinnbedingungen)
 7. [Turnusregeln](#turnusregeln)
 8. [Strategie-Tipps](#strategie-tipps)
+9. [Gameplay-Varianten](#gameplay-varianten)
 
 ---
 
@@ -27,7 +28,7 @@ Ein asymmetrisches Strategie-Brettspiel der Wikinger (auch "Wikinger-Schach" gen
 ### Basisdaten
 | Aspekt | Detail |
 |--------|--------|
-| **Spielfeld** | 11 × 11 Felder |
+| **Spielfeld** | 11 × 11 Felder (Copenhagen; Brandubh 7 × 7 und Tablut 9 × 9 siehe [Gameplay-Varianten](#gameplay-varianten)) |
 | **Angreifer** | 24 rote Soldaten |
 | **Verteidiger** | 12 blaue Soldaten + 1 König |
 | **Zugfolge** | Angreifer beginnt |
@@ -284,26 +285,33 @@ Ein Zug ist **illegal** wenn:
 
 ## Gameplay-Varianten
 
-### Tablut (7×7 kleinere Version)
-- 8 Angreifer vs. 4 Verteidiger + König
-- Schneller, für Anfänger
-- Gleiche Regeln
+Die Variante wird beim Erstellen eines Spiels gewählt (Web-UI: Auswahl „Variante“; API: Feld `variant` mit `copenhagen` (Standard), `brandubh` oder `tablut` bei `POST /api/games` und `POST /api/online/games`). Ohne Angabe wird Copenhagen gespielt. Alle Varianten: Angreifer beginnen, alle Figuren ziehen wie Türme, Schlag durch Einklemmen (custodial), Thron wie oben (Soldaten dürfen ihn nur überqueren, er ist für Angreifer immer und für Verteidiger nur leer feindlich), Wiederholungsregel (dritte Wiederholung verboten), Zugunfähigkeit = Niederlage.
 
-### Brandubh
-- Irische Variante, 7×7
-- 9 Angreifer vs. 5 Verteidiger + König
+| | Copenhagen (Standard) | Brandubh | Tablut |
+|---|---|---|---|
+| **Brett** | 11 × 11 | 7 × 7 | 9 × 9 |
+| **Angreifer** | 24 | 8 | 16 |
+| **Verteidiger** | 12 + König | 4 + König | 8 + König |
+| **Thron** | (5,5) | (3,3) | (4,4) |
+| **Königsflucht** | Ecke | Ecke | beliebiges Randfeld |
+| **Ecken** | nur König, feindlich | nur König, feindlich | normale Felder |
+| **König-Fang** | 4 Seiten (nie am Rand) | 4 Seiten auf/neben dem Thron, sonst 2 Angreifer | 4 Seiten auf/neben dem Thron, sonst 2 Angreifer |
+| **Randschlag, Ausstiegs-Fort, Umzingelung** | ja | nein | nein |
 
-### Regelvarianten
+### Brandubh (7×7, irisch)
+- Angreifer: (0,3), (1,3), (6,3), (5,3), (3,0), (3,1), (3,6), (3,5). Verteidiger: (2,3), (4,3), (3,2), (3,4). König auf dem Thron (3,3).
+- Verteidiger gewinnen, sobald der König eine Ecke betritt.
+- Der König wird von zwei Angreifern auf gegenüberliegenden Seiten gefangen, solange er weder auf noch neben dem Thron steht. Auf dem Thron braucht es vier Angreifer, neben dem Thron drei Angreifer und den leeren Thron als vierte Seite. Eine feindliche Ecke zählt wie ein Angreifer.
 
-Einige Varianten verwenden:
-- Schwächerer König (leichter zu fangen)
-- Rand-Escape statt Ecken-Escape
-- Verschiedene Zahlenverhältnisse
+### Tablut (9×9, Linné-Aufstellung)
+- Angreifer: je Kante drei Steine auf der Kante und einer dahinter ((0,3),(0,4),(0,5),(1,4) usw.). Verteidiger: (2,4), (3,4), (5,4), (6,4), (4,2), (4,3), (4,5), (4,6). König auf dem Thron (4,4).
+- Verteidiger gewinnen, sobald der König irgendein Randfeld erreicht. Ecken sind gewöhnliche Felder.
+- Königs-Fang wie bei Brandubh (4 Seiten auf/neben dem Thron, sonst 2 Angreifer).
 
-**Für unser Projekt nutzen wir: Copenhagen Hnefatafl (Standard)**
-
----
-
+### Auslegungsentscheidungen
+- Beim schwachen König (Brandubh/Tablut) wird der Fang nur nach einem **Angreiferzug** geprüft; zieht der König selbst zwischen zwei Angreifer, ist er nicht gefangen.
+- „Neben dem Thron“ bedeutet orthogonal angrenzend; diagonale Felder zählen als normale Felder.
+- Brandubh und Tablut verwenden weder Randschlag (Shield Wall), Ausstiegs-Fort noch Umzingelung; diese Regeln gehören nur zu Copenhagen. Der KI-Gegner funktioniert für alle Größen.
 ## Implementierungs-Checkliste für Engine
 
 ### Zu implementieren:
@@ -335,4 +343,4 @@ Einige Varianten verwenden:
 
 **Versión**: 1.0  
 **Letztes Update**: 2026-11-26  
-**Regelvariante**: Copenhagen Hnefatafl (Standard 11×11)
+**Regelvariante**: Copenhagen Hnefatafl (Standard 11×11), zusätzlich Brandubh und Tablut

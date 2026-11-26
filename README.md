@@ -1,6 +1,6 @@
 # Hnefatafl
 
-Digitale Umsetzung des Wikinger-Strategiespiels Hnefatafl (Copenhagen-Regeln, 11 × 11).
+Digitale Umsetzung des Wikinger-Strategiespiels Hnefatafl (Copenhagen-Regeln, 11 × 11; zusätzlich die Varianten Brandubh 7 × 7 und Tablut 9 × 9, siehe docs/REGELN.md).
 
 - Zwei Spieler oder gegen den Computer (Standard: Computer spielt die Verteidiger, die Seite ist wählbar)
 - Oberfläche auf Deutsch und Englisch (Standard: Browsersprache)
