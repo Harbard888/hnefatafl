@@ -1,6 +1,5 @@
 // Replace to change the default background playlist (any YouTube playlist or video URL).
-export const DEFAULT_PLAYLIST_URL =
-  'https://www.youtube.com/watch?v=VYEqT0enZe4&list=PLfBULhdsahtM&pp=sAgC';
+export const DEFAULT_PLAYLIST_URL = 'https://www.youtube.com/watch?v=VYEqT0enZe4&list=PLfBULhdsahtM';
 
 export const PLAYLIST_STORAGE_KEY = 'hnefatafl.music.playlist';
 export const VOLUME_STORAGE_KEY = 'hnefatafl.music.volume';
