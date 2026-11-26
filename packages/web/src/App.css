@@ -96,3 +96,36 @@
 .status {
   font-weight: bold;
 }
+
+.music {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin: 0.5rem 0;
+  position: relative;
+}
+
+.music-form {
+  display: flex;
+  gap: 0.5rem;
+  flex: 1 1 100%;
+}
+
+.music-form input {
+  flex: 1;
+  min-width: 0;
+}
+
+.music-error {
+  color: #b3261e;
+  flex: 1 1 100%;
+}
+
+.music-host {
+  position: fixed;
+  left: -9999px;
+  top: 0;
+  width: 200px;
+  height: 112px;
+}
