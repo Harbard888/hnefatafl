@@ -15,6 +15,7 @@ export interface MoveRecord {
   side: Side;
   from: Pos;
   to: Pos;
+  captured?: Pos[];
 }
 
 export interface LegalMove {
