@@ -67,3 +67,8 @@ Der Installer ist nicht signiert. Windows SmartScreen zeigt deshalb beim ersten 
 | `packages/backend` | Express-API für Spiele und Züge |
 | `packages/web` | React-Oberfläche (Vite) |
 | `packages/desktop` | Electron-App, startet Backend und Oberfläche lokal |
+
+## Online play
+
+Choose *Online* in the web app: create a game (pick a side), share the code/link, and the second player joins as the other side. State lives in memory on the backend (lost on restart); clients poll every 1.5 s and authenticate with per-player tokens (X-Player-Token). API: POST /api/online/games, POST /api/online/games/:code/join, GET /api/online/games/:code, POST /api/online/games/:code/moves.
+

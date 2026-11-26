@@ -55,10 +55,10 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+async function request<T>(path: string, init?: RequestInit, token?: string): Promise<T> {
   const response = await fetch(path, {
     ...init,
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...(token ? { 'X-Player-Token': token } : {}) },
   });
   const body = await response.json();
   if (!response.ok) {
@@ -66,6 +66,45 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   }
   return body as T;
 }
+
+export interface OnlineView {
+  code: string;
+  you: Side;
+  board: GameView['board'];
+  turn: Side;
+  status: GameView['status'];
+  legalMoves: { from: Pos; to: Pos }[];
+  opponentJoined: boolean;
+  opponentConnected: boolean;
+  moves: MoveRecord[];
+}
+
+export interface OnlineSeat {
+  token: string;
+  side: Side;
+  view: OnlineView;
+}
+
+export function createOnlineGame(side: Side | 'random'): Promise<OnlineSeat> {
+  return request('/api/online/games', { method: 'POST', body: JSON.stringify({ side }) });
+}
+
+export function joinOnlineGame(code: string): Promise<OnlineSeat> {
+  return request(`/api/online/games/${encodeURIComponent(code)}/join`, { method: 'POST' });
+}
+
+export function fetchOnlineGame(code: string, token: string): Promise<OnlineView> {
+  return request(`/api/online/games/${encodeURIComponent(code)}`, undefined, token);
+}
+
+export function playOnlineMove(code: string, token: string, from: Pos, to: Pos): Promise<OnlineView> {
+  return request(
+    `/api/online/games/${encodeURIComponent(code)}/moves`,
+    { method: 'POST', body: JSON.stringify({ from, to }) },
+    token,
+  );
+}
+
 
 export function createGame(options: CreateOptions): Promise<GameView> {
   return request<GameView>('/api/games', { method: 'POST', body: JSON.stringify(options) });

@@ -2,6 +2,8 @@ import express, { type NextFunction, type Request, type Response } from 'express
 import { DEFAULT_DIFFICULTY, DIFFICULTIES, isDifficulty, type Pos, type Side } from '@hnefatafl/core-engine';
 import { GameStore, type GameMode, type GameOptions } from './games.js';
 
+import { OnlineError, OnlineStore, type SideChoice } from './online.js';
+
 const MODES: readonly GameMode[] = ['two-player', 'vs-computer'];
 const SIDES: readonly Side[] = ['attacker', 'defender'];
 const BOARD_SIZE = 11;
@@ -31,7 +33,10 @@ function parseOptions(body: unknown): GameOptions | string {
   return { mode: mode as GameMode, computerSide: computerSide as Side, difficulty, depth: depth as number | undefined };
 }
 
-export function createApp(store: GameStore = new GameStore()): express.Express {
+export function createApp(
+  store: GameStore = new GameStore(),
+  onlineStore: OnlineStore = new OnlineStore(),
+): express.Express {
   const app = express();
   app.use(express.json());
 
@@ -77,6 +82,48 @@ export function createApp(store: GameStore = new GameStore()): express.Express {
       res.status(400).json({ error: error instanceof Error ? error.message : 'invalid move' });
     }
   });
+
+  const token = (req: Request): string | undefined => {
+    const header = req.header('x-player-token');
+    return header === undefined || header === '' ? undefined : header;
+  };
+  const online = (handler: (req: Request, res: Response) => void) => (req: Request, res: Response) => {
+    try {
+      handler(req, res);
+    } catch (error) {
+      if (error instanceof OnlineError) {
+        res.status(error.status).json({ error: error.message });
+        return;
+      }
+      throw error;
+    }
+  };
+
+  app.post('/api/online/games', online((req, res) => {
+    const side = ((req.body ?? {}) as Record<string, unknown>).side ?? 'random';
+    if (side !== 'random' && !SIDES.includes(side as Side)) {
+      res.status(400).json({ error: `side must be one of random, ${SIDES.join(', ')}` });
+      return;
+    }
+    res.status(201).json(onlineStore.create(side as SideChoice));
+  }));
+
+  app.post('/api/online/games/:code/join', online((req, res) => {
+    res.status(201).json(onlineStore.join(String(req.params.code)));
+  }));
+
+  app.get('/api/online/games/:code', online((req, res) => {
+    res.json(onlineStore.get(String(req.params.code), token(req)));
+  }));
+
+  app.post('/api/online/games/:code/moves', online((req, res) => {
+    const body = (req.body ?? {}) as Record<string, unknown>;
+    if (!isPos(body.from) || !isPos(body.to)) {
+      res.status(400).json({ error: `from and to must be {row, col} with values 0-${BOARD_SIZE - 1}` });
+      return;
+    }
+    res.json(onlineStore.play(String(req.params.code), token(req), body.from, body.to));
+  }));
 
   app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
     const status = (err as { status?: number }).status;
