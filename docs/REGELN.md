@@ -188,18 +188,18 @@ Kante:  A D D D D A  →  A . . . . A
    - Sofortiger Sieg
    - König muss nur das Feld betreten (nicht "ausbrechen")
 
-2. **Ausstiegs-Fort** (Exit Fort): *Nicht umgesetzt. In dieser Digitalversion gibt es diese Gewinnbedingung nicht.*
-   - König steht auf der Spielfeldkante
-   - König ist von einer Verteidiger-Formation umgeben, die Angreifer nicht durchbrechen können
-   - Mindestens ein leeres Nachbarfeld zum Ausbrechen ist vorhanden
-   - Angreifer können diese Festung nicht durchbrechen → Sieg
+2. **Ausstiegs-Fort** (Exit Fort):
+   - König steht auf der Spielfeldkante und kann sich bewegen
+   - Die für ihn erreichbaren leeren Felder sind nur von Verteidigern und dem Spielfeldrand umschlossen (kein Angreifer grenzt an)
+   - Kein umschließender Verteidiger kann geschlagen werden (auf jeder Achse schützt ihn ein Verteidiger, der König, ein Feld im Fort oder der Brettrand)
+   - Sofortiger Sieg der Verteidiger (geprüft nach jedem Zug)
 
 3. **Angreifer-Stalemate**: 
    - Angreifer haben keinen legalen Zug möglich
    - Verteidiger gewinnen
 
 4. **Wiederholungsregel**: 
-   - Dreifache Wiederholung der gleichen Position → Unentschieden (Variante)
+   - Ein Zug, der dieselbe Position (inkl. Zugrecht) zum dritten Mal herstellen würde, ist verboten. Hat ein Spieler nur noch solche Züge, gilt er als zugunfähig und verliert (kein Remis).
 
 ### 💀 Angreifer gewinnen wenn:
 
@@ -215,8 +215,8 @@ Kante:  A D D D D A  →  A . . . . A
    - Verteidiger haben keinen legalen Zug möglich
    - Angreifer gewinnen
 
-4. **Perpetual Repetition**: 
-   - Gleiche Position wiederholt sich 3x → Remis (Variante)
+4. **Wiederholung**: 
+   - Siehe oben: dritte Wiederholung ist verboten, es gibt kein Remis.
 
 ---
 
@@ -275,7 +275,7 @@ Ein Zug ist **illegal** wenn:
    - Am Rand kann König nicht gefangen werden
 
 3. **Ecken anstreben**: Der König gewinnt sofort, sobald er eine Ecke erreicht
-   - Das Ausstiegs-Fort gibt es in dieser Digitalversion nicht
+   - Auch ein Ausstiegs-Fort auf der Kante bringt den Sieg
 
 4. **Formation halten**: Bleibe zusammenhängend
    - Verstreute Truppen werden einzeln geschlagen
@@ -315,7 +315,7 @@ Einige Varianten verwenden:
 - [ ] Special-Field-Handling (Thron, Ecken)
 - [ ] Win-Condition-Checker
   - [ ] Corner-Escape
-  - [ ] Exit-Fort (bewusst nicht umgesetzt)
+  - [x] Exit-Fort
   - [ ] King-Capture
   - [ ] Encirclement
   - [ ] Stalemate

@@ -118,6 +118,46 @@ export function isKingCaptured(board: Board): boolean {
   });
 }
 
+/**
+ * Exit fort: the king stands on the edge and can move, and the empty squares it can reach are sealed off
+ * from attackers by defenders and the board edge, with no sealing defender capturable.
+ */
+export function hasExitFort(board: Board): boolean {
+  const king = findKing(board);
+  if (king === null || !isEdge(king) || legalDestinations(board, king).length === 0) return false;
+
+  const region = new Map<string, Pos>([[keyOf(king), king]]);
+  const wall = new Map<string, Pos>();
+  const stack: Pos[] = [king];
+  while (stack.length > 0) {
+    const pos = stack.pop()!;
+    for (const dir of ORTHOGONAL) {
+      const next = offset(pos, dir);
+      if (!inBounds(next) || region.has(keyOf(next))) continue;
+      const piece = at(board, next);
+      if (piece === 'attacker') return false;
+      if (piece === 'defender') wall.set(keyOf(next), next);
+      else if (isCorner(next)) return false;
+      else {
+        region.set(keyOf(next), next);
+        stack.push(next);
+      }
+    }
+  }
+
+  // A neighbour protects a defender on an axis if attackers can never occupy it or turn it hostile.
+  const protects = (pos: Pos): boolean => {
+    if (!inBounds(pos)) return true;
+    if (region.has(keyOf(pos)) && !isThrone(pos)) return true;
+    return wall.has(keyOf(pos)) || at(board, pos) === 'king';
+  };
+  return [...wall.values()].every((soldier) =>
+    [[{ row: 0, col: 1 }, { row: 0, col: -1 }], [{ row: 1, col: 0 }, { row: -1, col: 0 }]].every(
+      (axis) => axis.some((dir) => protects(offset(soldier, dir))),
+    ),
+  );
+}
+
 /** Flood fill from all defenders through non-attacker squares. Encircled if the fill never reaches the edge. */
 export function isEncircled(board: Board): boolean {
   const seen = new Set<string>();

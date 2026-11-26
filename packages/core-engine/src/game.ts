@@ -10,6 +10,7 @@ import {
 } from './board.js';
 import {
   capturesAfterMove,
+  hasExitFort,
   isEncircled,
   isKingCaptured,
   legalDestinations,
@@ -113,6 +114,7 @@ export class HnefataflGame {
     const king = findKing(this.board);
     if (king !== null && isCorner(king)) return won('defender', 'king-escaped');
     if (isKingCaptured(this.board)) return won('attacker', 'king-captured');
+    if (hasExitFort(this.board)) return won('defender', 'exit-fort');
     if (isEncircled(this.board)) return won('attacker', 'encirclement');
     if (!this.hasAllowedMove(this.currentTurn)) {
       return won(opposite(this.currentTurn), 'no-legal-moves');

@@ -23,7 +23,7 @@ export interface Move {
   readonly to: Pos;
 }
 
-export type WinReason = 'king-escaped' | 'king-captured' | 'encirclement' | 'no-legal-moves';
+export type WinReason = 'king-escaped' | 'king-captured' | 'exit-fort' | 'encirclement' | 'no-legal-moves';
 
 export type GameStatus =
   | { readonly kind: 'ongoing' }
