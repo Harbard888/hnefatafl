@@ -5,6 +5,14 @@
   font-family: system-ui, sans-serif;
 }
 
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
 .controls {
   display: flex;
   gap: 1rem;

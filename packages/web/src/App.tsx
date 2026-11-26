@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { createGame, playMove, type GameMode, type GameView, type Pos, type Side } from './api';
+import { useEffect, useState } from 'react';
+import { ApiError, createGame, playMove, type GameMode, type GameView, type Pos, type Side } from './api';
+import { detectLang, translator, type Lang, type MessageKey } from './i18n';
 import './App.css';
 
 const THRONE = { row: 5, col: 5 };
@@ -9,11 +10,6 @@ const SYMBOLS: Record<string, string> = {
   attacker: '⚫',
   defender: '⚪',
   king: '👑',
-};
-
-const SIDE_NAMES: Record<Side, string> = {
-  attacker: 'Angreifer',
-  defender: 'Verteidiger',
 };
 
 function sameCell(a: Pos, b: Pos): boolean {
@@ -26,11 +22,25 @@ function ownsPiece(square: string | null, side: Side): boolean {
 }
 
 export default function App() {
+  const [lang, setLang] = useState<Lang>(detectLang);
   const [game, setGame] = useState<GameView | null>(null);
   const [mode, setMode] = useState<GameMode>('two-player');
   const [selected, setSelected] = useState<Pos | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  const t = translator(lang);
+
+  useEffect(() => {
+    document.documentElement.lang = lang;
+    document.title = translator(lang)('title');
+  }, [lang]);
+
+  function errorMessage(e: unknown): string {
+    if (e instanceof ApiError && e.status === 400) return t('moveRejected');
+    if (e instanceof ApiError) return e.message;
+    return t('connectionError');
+  }
 
   async function start() {
     setBusy(true);
@@ -39,7 +49,7 @@ export default function App() {
       setGame(await createGame({ mode, computerSide: 'defender' }));
       setSelected(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(errorMessage(e));
     } finally {
       setBusy(false);
     }
@@ -67,7 +77,7 @@ export default function App() {
     try {
       setGame(await playMove(game.id, selected, pos));
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(errorMessage(e));
     } finally {
       setSelected(null);
       setBusy(false);
@@ -76,9 +86,10 @@ export default function App() {
 
   function statusText(view: GameView): string {
     if (view.status.kind === 'won') {
-      return `${SIDE_NAMES[view.status.winner]} gewinnt (${view.status.reason})`;
+      const reasonKey = `reason_${view.status.reason.replace(/-/g, '_')}` as MessageKey;
+      return t('winner', { side: t(view.status.winner), reason: t(reasonKey) });
     }
-    return `Am Zug: ${SIDE_NAMES[view.turn]}`;
+    return t('turn', { side: t(view.turn) });
   }
 
   const targets = new Set(
@@ -91,17 +102,26 @@ export default function App() {
 
   return (
     <main className="app">
-      <h1>Hnefatafl</h1>
+      <header className="header">
+        <h1>{t('title')}</h1>
+        <label>
+          {t('language')}{' '}
+          <select value={lang} onChange={(e) => setLang(e.target.value as Lang)}>
+            <option value="de">Deutsch</option>
+            <option value="en">English</option>
+          </select>
+        </label>
+      </header>
 
       <section className="controls">
         <label>
-          Modus{' '}
+          {t('mode')}{' '}
           <select value={mode} onChange={(e) => setMode(e.target.value as GameMode)}>
-            <option value="two-player">Zwei Spieler</option>
-            <option value="vs-computer">Gegen den Computer (Verteidiger)</option>
+            <option value="two-player">{t('modeTwoPlayer')}</option>
+            <option value="vs-computer">{t('modeVsComputer')}</option>
           </select>
         </label>
-        <button onClick={start} disabled={busy}>Neues Spiel</button>
+        <button onClick={start} disabled={busy}>{t('newGame')}</button>
       </section>
 
       {error && <p className="error" role="alert">{error}</p>}
@@ -109,7 +129,7 @@ export default function App() {
       {game && (
         <>
           <p className="status">{statusText(game)}</p>
-          <div className="board" role="grid" aria-label="Spielbrett">
+          <div className="board" role="grid" aria-label={t('board')}>
             {game.board.map((rowCells, row) =>
               rowCells.map((square, col) => {
                 const pos = { row, col };
@@ -118,12 +138,13 @@ export default function App() {
                 if (sameCell(THRONE, pos)) classes.push('throne');
                 if (selected !== null && sameCell(selected, pos)) classes.push('selected');
                 if (targets.has(`${row},${col}`)) classes.push('target');
+                const label = t('square', { row, col });
                 return (
                   <button
                     key={`${row}-${col}`}
                     className={classes.join(' ')}
                     onClick={() => handleClick(pos)}
-                    aria-label={`Feld ${row},${col}${square ? ` (${square})` : ''}`}
+                    aria-label={square ? `${label} (${t(square as MessageKey)})` : label}
                   >
                     {square ? SYMBOLS[square] : ''}
                   </button>
@@ -133,8 +154,10 @@ export default function App() {
           </div>
           {game.computerMove && (
             <p className="info">
-              Computer zieht von {game.computerMove.from.row},{game.computerMove.from.col} nach{' '}
-              {game.computerMove.to.row},{game.computerMove.to.col}.
+              {t('computerMove', {
+                from: `${game.computerMove.from.row},${game.computerMove.from.col}`,
+                to: `${game.computerMove.to.row},${game.computerMove.to.col}`,
+              })}
             </p>
           )}
         </>

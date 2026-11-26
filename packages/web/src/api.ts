@@ -39,6 +39,16 @@ export interface CreateOptions {
   computerSide?: Side;
 }
 
+export class ApiError extends Error {
+  readonly status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+  }
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path, {
     ...init,
@@ -46,7 +56,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   });
   const body = await response.json();
   if (!response.ok) {
-    throw new Error((body as { error?: string }).error ?? `HTTP ${response.status}`);
+    throw new ApiError((body as { error?: string }).error ?? `HTTP ${response.status}`, response.status);
   }
   return body as T;
 }
